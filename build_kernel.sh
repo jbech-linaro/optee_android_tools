@@ -12,22 +12,17 @@ if [ -z "$ANDROID_BUILD_TOP" ]; then
    echo "  $ lunch <target>"
 fi
 
-dest="${ANDROID_PRODUCT_OUT}/kernel_obj"
+CCACHE="`which ccache` "
 
-cross=optee/gcc-linaro-4.9-2015.05-x86_64_aarch64-linux-gnu/bin
-if [ ! -d "$cross" ]; then
-   echo "Please run ./optee/get_toolchain.sh first"
-   exit 1
-fi
+DEST="${ANDROID_PRODUCT_OUT}/kernel_obj"
 
-cross=$(realpath "$cross")
-cross="$cross/aarch64-linux-gnu-"
+CROSS="${CCACHE} $ANDROID_BUILD_TOP/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-"
 
-kerndir=device/linaro/hikey-kernel
+KERNDIR="$ANDROID_BUILD_TOP/device/linaro/hikey-kernel-src"
 
 CPU_CORES=$(nproc)
 
-flags="CROSS_COMPILE=${cross} ARCH=arm64 -j${CPU_CORES} O=${dest}"
+flags="ARCH=arm64 -j${CPU_CORES} O=${DEST}"
 
-make -C $kerndir ${flags} hikey_defconfig || die "Unable to configure kernel"
-make -C $kerndir ${flags} || die "Unable to build kernel"
+make -C $KERNDIR ${flags} hikey_defconfig || die "Unable to configure kernel"
+make -C $KERNDIR CROSS_COMPILE="$CROSS" $flags || die "Unable to build kernel"
